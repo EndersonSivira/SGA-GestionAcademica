@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SGA - Sistema de Gestión Académica</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- PANTALLA INICIAL: SELECCIÓN DE ROL -->
+    <div id="role-selector-screen" class="role-modal-overlay">
+        <div class="role-modal-card">
+            <div class="role-icon-header">
+                <i class="bx bxs-graduation"></i>
+            </div>
+            <h2>Bienvenido al SGA</h2>
+            <p>Selecciona tu tipo de acceso para ingresar al sistema:</p>
+            <div class="role-buttons-container">
+                <button class="btn-role btn-admin" onclick="abrirLoginAdmin()">
+                    <i class="bx bxs-user-badge"></i>
+                    <span>Acceso Administrativo</span>
+                </button>
+                <button class="btn-role btn-student" onclick="selectRole('student')">
+                    <i class="bx bxs-id-card"></i>
+                    <span>Consulta de Estudiante</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE LOGIN ADMINISTRATIVO -->
+    <div id="admin-login-modal" class="role-modal-overlay" style="display: none;">
+        <div class="role-modal-card">
+            <button type="button" class="btn-back-role" onclick="volverASeleccionRol()">
+                <i class='bx bx-left-arrow-alt'></i> Volver
+            </button>
+            <div class="role-icon-header">
+                <i class='bx bx-lock-alt'></i>
+            </div>
+            <h2>Acceso Administrativo</h2>
+            <p>Ingresa tus credenciales para continuar</p>
+
+            <form id="form-admin-login" onsubmit="validarLoginAdmin(event)">
+                <div class="form-group">
+                    <label for="admin-user">Usuario</label>
+                    <div class="input-with-icon">
+                        <i class='bx bx-user'></i>
+                        <input type="text" id="admin-user" placeholder="Ej: admin" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="admin-pass">Contraseña</label>
+                    <div class="input-with-icon">
+                        <i class='bx bx-key'></i>
+                        <input type="password" id="admin-pass" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div id="login-error" style="color: #dc2626; font-size: 0.85rem; margin-top: 0.75rem; display: none; font-weight: 600;">
+                    Usuario o contraseña incorrectos.
+                </div>
+
+                <button type="submit" class="btn-submit" style="margin-top: 1.5rem;">
+                    Ingresar al Sistema
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CONSULTA PÚBLICA PARA ESTUDIANTES -->
+    <div id="student-portal-screen" class="role-modal-overlay" style="display: none;">
+        <div class="role-modal-card student-card-wide">
+            <button class="btn-back-role" onclick="resetRoleSelection()">
+                <i class="bx bx-left-arrow-alt"></i> Volver a Selección
+            </button>
+            
+            <div class="student-search-header">
+                <i class="bx bxs-search-alt"></i>
+                <h3>Consulta de Calificaciones y Expediente</h3>
+                <p>Ingresa tu número de cédula para consultar tus datos personales y notas activas.</p>
+            </div>
+
+            <form class="student-search-form" onsubmit="fetchStudentGrades(event)">
+                <div class="form-group">
+                    <label for="student-cedula-input">Cédula de Identidad *</label>
+                    <div class="input-with-icon">
+                        <i class="bx bxs-id-card"></i>
+                        <input type="text" id="student-cedula-input" required placeholder="Ej. V-25123456 o 31756617">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" style="margin-top: 0.75rem;">Consultar Expediente</button>
+            </form>
+
+            <div id="student-results-container" style="display: none; margin-top: 1.25rem;">
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin-bottom: 1rem;">
+                
+                <!-- TARJETA DE DATOS PERSONALES DEL ESTUDIANTE -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h4 id="res-student-name" style="font-size: 1.05rem; color: var(--text-main); font-weight: 700;">--</h4>
+                        <span id="res-student-cedula" style="background: var(--primary-light); color: var(--primary-color); padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">--</span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; font-size: 0.85rem; color: #475569;">
+                        <div><strong>Edad:</strong> <span id="res-student-edad">--</span></div>
+                        <div><strong>Género:</strong> <span id="res-student-genero">--</span></div>
+                        <div><strong>Fecha de Nac.:</strong> <span id="res-student-fnac">--</span></div>
+                        <div><strong>Correo:</strong> <span id="res-student-correo">--</span></div>
+                        <div><strong>Teléfono:</strong> <span id="res-student-telefono">--</span></div>
+                        <div><strong>Año / Sección:</strong> <span id="res-student-seccion">--</span></div>
+                        <div style="grid-column: 1 / -1;"><strong>Representante:</strong> <span id="res-student-rep">--</span> (<span id="res-student-telrep">--</span>)</div>
+                        <div style="grid-column: 1 / -1;"><strong>Dirección:</strong> <span id="res-student-dir">--</span></div>
+                    </div>
+                </div>
+
+                <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--text-main);"><i class='bx bxs-book-open'></i> Calificaciones Registradas</h4>
+                <div class="table-container">
+                    <table class="professional-table">
+                        <thead>
+                            <tr>
+                                <th>Materia / Unidad</th>
+                                <th>Nota</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="res-student-grades-body">
+                            <!-- Contenido dinámico -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL PRINCIPAL ADMINISTRATIVO -->
+    <div class="container" id="admin-app-container" style="display: none;">
+        
+        <!-- BOTÓN FLOTANTE MÓVIL PARA MENÚ -->
+        <button class="mobile-menu-toggle" onclick="toggleMobileSidebar()" aria-label="Abrir Menú">
+            <i class='bx bx-menu' id="menu-toggle-icon"></i>
+        </button>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="app-sidebar">
+            <div class="logo">
+                <i class="bx bxs-graduation"></i>
+                <h2>SGA Public</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="active" onclick="switchTab('dashboard')"><i class="bx bxs-dashboard"></i> Dashboard</a>
+                <a href="#" onclick="switchTab('registro')"><i class="bx bxs-user-plus"></i> Registrar Estudiante</a>
+                <a href="#" onclick="switchTab('secciones')"><i class="bx bxs-institution"></i> Asignar Secciones</a>
+                <a href="#" onclick="switchTab('matricula')"><i class="bx bxs-folder-open"></i> Matrícula Activa</a>
+                <a href="#" onclick="switchTab('notas')"><i class="bx bxs-file-plus"></i> Cargar Notas</a>
+                <a href="#" onclick="switchTab('bitacora')"><i class="bx bxs-book-content"></i> Bitácora</a>
+            </nav>
+            <div class="sidebar-footer" style="padding: 1rem;">
+                <button onclick="resetRoleSelection()" style="width: 100%; padding: 0.75rem; border: none; background: rgba(255,255,255,0.1); color: #fff; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-weight: 600;">
+                    <i class="bx bx-log-out"></i> Cambiar de Rol
+                </button>
+            </div>
+        </aside>
+
+        <!-- OVERLAY PARA CERRAR MENÚ EN MÓVIL -->
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Control Académico</h1>
+                <div class="user-profile">
+                    <span>Admin</span>
+                    <i class="bx bxs-user-circle"></i>
+                </div>
+            </header>
+
+            <!-- DASHBOARD -->
+            <section id="tab-dashboard" class="tab-content active">
+                <div style="margin-bottom: 2rem;">
+                    <h2 class="dash-section-title"><i class="bx bxs-pie-chart-alt-2"></i> Resumen Académico</h2>
+                    <div class="cards-grid">
+                        <div class="card">
+                            <i class="bx bxs-group icon-card"></i>
+                            <div>
+                                <h3>Total Estudiantes</h3>
+                                <p id="dash-total-estudiantes" class="card-metric-value">0</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <i class="bx bxs-user-detail icon-card" style="color: #f59e0b; background: #fffbeb;"></i>
+                            <div>
+                                <h3>Pendientes</h3>
+                                <p id="dash-pendientes-asignar" class="card-metric-value" style="color: #f59e0b;">0</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <i class="bx bxs-time-five icon-card" style="color: #10b981; background: #ecfdf5;"></i>
+                            <div>
+                                <h3>Promedio de Edad</h3>
+                                <p id="dash-promedio-edad" class="card-metric-value" style="color: #10b981;">0.0 años</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="dash-section-title"><i class="bx bxs-bar-chart-alt-2"></i> Distribución de Matrícula</h2>
+                    <div id="dashboard-years-distribution" class="dash-years-grid">
+                        <!-- Carga dinámica vía JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- REGISTRO CON EDAD AUTOMÁTICA Y NUEVOS CAMPOS -->
+            <section id="tab-registro" class="tab-content">
+                <div class="form-container" style="max-width: 720px;">
+                    <h2><i class="bx bxs-user-add"></i> Registro de Nuevo Estudiante</h2>
+                    <form id="student-form" onsubmit="saveStudent(event)">
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cedula">Cédula de Identidad *</label>
+                                <input type="text" id="cedula" required placeholder="Ej. V-25123456">
+                            </div>
+                            <div class="form-group">
+                                <label for="nombres">Nombres y Apellidos *</label>
+                                <input type="text" id="nombres" required placeholder="Ej. Juan Pérez">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fecha-nacimiento">Fecha de Nacimiento *</label>
+                                <input type="date" id="fecha-nacimiento" required onchange="calcularEdadAutomatica()">
+                            </div>
+                            <div class="form-group">
+                                <label for="edad">Edad (Calculada) *</label>
+                                <input type="number" id="edad" readonly placeholder="Se calcula sola" style="background: #f1f5f9; cursor: not-allowed; font-weight: bold; color: var(--primary-color);">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="genero">Género *</label>
+                                <select id="genero" class="student-select" required>
+                                    <option value="">-- Seleccionar Género --</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Femenino">Femenino</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="telefono">Teléfono de Contacto</label>
+                                <input type="tel" id="telefono" placeholder="Ej. 04125555555">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="correo">Correo Electrónico *</label>
+                            <input type="email" id="correo" required placeholder="juan@correo.com">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="representante">Nombre del Representante *</label>
+                                <input type="text" id="representante" required placeholder="Ej. María Pérez (Madre)">
+                            </div>
+                            <div class="form-group">
+                                <label for="telefono-rep">Teléfono del Representante *</label>
+                                <input type="tel" id="telefono-rep" required placeholder="Ej. 04141111111">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="direccion">Dirección de Habitación *</label>
+                            <textarea id="direccion" rows="3" required placeholder="Ej. Urbanización Las Mercedes, Calle Principal, Casa #12, La Victoria, Aragua." style="padding: 0.75rem 1rem; border: 2px solid var(--border-color); border-radius: 12px; font-size: 0.95rem; outline: none; width: 100%; resize: vertical;"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-submit" style="margin-top: 1rem;">Guardar Estudiante en Base de Datos</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- ASIGNAR SECCIONES -->
+            <section id="tab-secciones" class="tab-content">
+                <h2><i class="bx bxs-institution"></i> Asignación Masiva</h2>
+                <p style="color: #64748b; margin-bottom: 1.5rem; font-size: 0.9rem;">Selecciona los estudiantes pendientes, elige el año y sección para asignarlos.</p>
+
+                <div class="secciones-grid-layout">
+                    <div style="background: #fff; padding: 1.25rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm);">
+                        <h3 style="margin-bottom: 1rem; color: var(--primary-color); font-size: 1.1rem;">Destino</h3>
+                        
+                        <div class="form-group">
+                            <label for="assign-year-select">Año Académico *</label>
+                            <select id="assign-year-select" class="student-select" style="width: 100%;">
+                                <option value="">-- Seleccionar Año --</option>
+                                <option value="1">1er Año</option>
+                                <option value="2">2do Año</option>
+                                <option value="3">3er Año</option>
+                                <option value="4">4to Año</option>
+                                <option value="5">5to Año</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label for="assign-section-select">Sección *</label>
+                            <select id="assign-section-select" class="student-select" style="width: 100%;">
+                                <option value="">-- Seleccionar Sección --</option>
+                                <option value="A">Sección A</option>
+                                <option value="B">Sección B</option>
+                                <option value="C">Sección C</option>
+                            </select>
+                        </div>
+
+                        <button onclick="ejecutarAsignacionMasiva()" class="btn-submit" style="margin-top: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                            <i class="bx bx-check-double"></i> Asignar Seleccionados
+                        </button>
+                    </div>
+
+                    <div style="background: #fff; padding: 1.25rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e2e8f0;">
+                            <h3 style="font-size: 1rem;">Sin Asignar</h3>
+                            <label style="font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--primary-color);">
+                                <input type="checkbox" id="select-all-students" onchange="toggleSelectAll(this)"> Todos
+                            </label>
+                        </div>
+
+                        <div id="unassigned-students-list" style="max-height: 340px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MATRÍCULA ACTIVA -->
+            <section id="tab-matricula" class="tab-content">
+                <h2><i class="bx bxs-user-detail"></i> Matrícula Activa</h2>
+
+                <div id="paso-anos-matricula">
+                    <p style="color: #64748b; margin-bottom: 1.25rem; font-size: 0.9rem;">Selecciona un año académico para consultar sus secciones.</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                        <button class="year-card-btn" onclick="seleccionarAnioMatricula(1)">
+                            <h3>1er Año</h3>
+                            <span id="badge-year-1" class="badge-count">0 Estudiantes</span>
+                        </button>
+                        <button class="year-card-btn" onclick="seleccionarAnioMatricula(2)">
+                            <h3>2do Año</h3>
+                            <span id="badge-year-2" class="badge-count">0 Estudiantes</span>
+                        </button>
+                        <button class="year-card-btn" onclick="seleccionarAnioMatricula(3)">
+                            <h3>3er Año</h3>
+                            <span id="badge-year-3" class="badge-count">0 Estudiantes</span>
+                        </button>
+                        <button class="year-card-btn" onclick="seleccionarAnioMatricula(4)">
+                            <h3>4to Año</h3>
+                            <span id="badge-year-4" class="badge-count">0 Estudiantes</span>
+                        </button>
+                        <button class="year-card-btn" onclick="seleccionarAnioMatricula(5)">
+                            <h3>5to Año</h3>
+                            <span id="badge-year-5" class="badge-count">0 Estudiantes</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="paso-secciones-matricula" style="display: none;">
+                    <button class="btn-back-role" onclick="volverASeleccionAnio()" style="margin-bottom: 1rem;">
+                        <i class="bx bx-left-arrow-alt"></i> Volver a Años
+                    </button>
+                    <h3 id="titulo-anio-seleccionado" style="margin-bottom: 1rem; color: var(--primary-color); font-size: 1.1rem;"></h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem;">
+                        <div class="year-card-btn" onclick="seleccionarSeccionTabla('A')">
+                            <i class="bx bxs-group" style="font-size: 1.8rem; color: var(--primary-color);"></i>
+                            <h3 style="margin-top: 0.4rem;">Sección A</h3>
+                            <span id="badge-seccion-A" class="badge-count">0 Alumnos</span>
+                        </div>
+                        <div class="year-card-btn" onclick="seleccionarSeccionTabla('B')">
+                            <i class="bx bxs-group" style="font-size: 1.8rem; color: var(--primary-color);"></i>
+                            <h3 style="margin-top: 0.4rem;">Sección B</h3>
+                            <span id="badge-seccion-B" class="badge-count">0 Alumnos</span>
+                        </div>
+                        <div class="year-card-btn" onclick="seleccionarSeccionTabla('C')">
+                            <i class="bx bxs-group" style="font-size: 1.8rem; color: var(--primary-color);"></i>
+                            <h3 style="margin-top: 0.4rem;">Sección C</h3>
+                            <span id="badge-seccion-C" class="badge-count">0 Alumnos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="paso-tabla-matricula" style="display: none;">
+                    <button class="btn-back-role" onclick="volverASeleccionSeccion()" style="margin-bottom: 1rem;">
+                        <i class="bx bx-left-arrow-alt"></i> Volver a Secciones
+                    </button>
+                    <h3 id="titulo-seccion-seleccionada" style="margin-bottom: 1rem; color: var(--primary-color); font-size: 1.1rem;"></h3>
+
+                    <div class="table-container" style="background: #fff; padding: 0.75rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <table class="professional-table">
+                            <thead>
+                                <tr>
+                                    <th>Cédula</th>
+                                    <th>Nombre y Apellido</th>
+                                    <th>Mover</th>
+                                    <th>Notas</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-estudiantes-seccion-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="paso-detalles-notas-estudiante" style="display: none;">
+                    <button class="btn-back-role" onclick="volverATablaSeccion()" style="margin-bottom: 1rem;">
+                        <i class="bx bx-left-arrow-alt"></i> Volver a Alumnos
+                    </button>
+
+                    <div style="background: #fff; padding: 1.25rem; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 1.25rem;">
+                        <h3 id="nombre-estudiante-notas" style="color: var(--primary-color); margin-bottom: 0.2rem; font-size: 1.1rem;">---</h3>
+                        <p id="cedula-estudiante-notas" style="color: #64748b; font-weight: 600; font-size: 0.9rem;">---</p>
+                    </div>
+
+                    <div style="background: #f8fafc; padding: 1.1rem; border-radius: 16px; border: 1px solid #cbd5e1; margin-bottom: 1.25rem;">
+                        <h4 style="margin-bottom: 0.6rem; color: #334155; font-size: 0.95rem;"><i class="bx bx-plus-circle"></i> Agregar Nota</h4>
+                        <form id="form-agregar-nota-directa" onsubmit="guardarNuevaNotaDirecta(event)" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: flex-end;">
+                            <div style="flex: 2; min-width: 180px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Materia</label>
+                                <select id="nueva-materia-input" required style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;"></select>
+                            </div>
+                            <div style="flex: 1; min-width: 100px;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Nota (0-20)</label>
+                                <input type="number" id="nueva-nota-input" min="0" max="20" step="0.1" required placeholder="Ej. 16" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                            </div>
+                            <button type="submit" class="btn-submit" style="height: 38px; padding: 0 1rem; font-size: 0.85rem;">Agregar</button>
+                        </form>
+                    </div>
+
+                    <div class="table-container" style="background: #fff; padding: 0.75rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <table class="professional-table">
+                            <thead>
+                                <tr>
+                                    <th>Materia</th>
+                                    <th>Nota</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-gestion-notas-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CARGAR NOTAS -->
+            <section id="tab-notas" class="tab-content">
+                <div class="form-container">
+                    <h2><i class="bx bxs-file-plus"></i> Cargar Notas</h2>
+                    <form id="notes-form" onsubmit="saveGrade(event)">
+                        <div class="form-group">
+                            <label for="select-year-grade">Año Académico *</label>
+                            <select class="student-select" id="select-year-grade" required onchange="filtrarEstudiantesPorAnio()">
+                                <option value="">-- Seleccionar Año --</option>
+                                <option value="1">1er Año</option>
+                                <option value="2">2do Año</option>
+                                <option value="3">3er Año</option>
+                                <option value="4">4to Año</option>
+                                <option value="5">5to Año</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="select-student-grade">Estudiante *</label>
+                            <select class="student-select" id="select-student-grade" required disabled>
+                                <option value="">-- Selecciona primero un año --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="materia">Materia *</label>
+                            <select id="materia" class="student-select" required></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nota">Calificación *</label>
+                            <input type="number" id="nota" min="0" max="20" step="0.1" required placeholder="Ej. 18.5">
+                        </div>
+
+                        <button type="submit" class="btn-submit" style="margin-top: 0.5rem;">Registrar Calificación</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- BITÁCORA -->
+            <section id="tab-bitacora" class="tab-content">
+                <div class="form-container" style="max-width: 100%;">
+                    <h2><i class="bx bxs-book-content"></i> Bitácora de Registro y Eventos</h2>
+                    <p style="color: #64748b; margin-bottom: 1.25rem; font-size: 0.9rem;">Historial detallado de todas las actividades, registros y modificaciones realizadas en el sistema.</p>
+                    
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                        <button onclick="limpiarBitacora()" style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                            <i class='bx bx-trash'></i> Limpiar Bitácora
+                        </button>
+                    </div>
+
+                    <div class="table-container" style="background: #fff; padding: 0.75rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        <table class="professional-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha / Hora</th>
+                                    <th>Acción / Evento</th>
+                                    <th>Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-bitacora-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
